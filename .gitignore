@@ -1,3 +1,16 @@
+# Build output
+build/
+egovernance
+
+# Runtime data files (keep directory structure via data/.gitkeep)
+data/*.dat
+
+# Test binaries and temporary test data
+tests/test_auth
+tests/test_service_request
+tests/test_tax_record
+tests/test_data/
+
 # Prerequisites
 *.d
 
