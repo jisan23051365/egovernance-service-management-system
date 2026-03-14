@@ -22,8 +22,9 @@ void utils_get_password(const char *prompt, char *buf, size_t size);
 
 /* Password hashing --------------------------------------------------- */
 /*
- * NOTE: This is a simple two-round hash for demonstration purposes.
- * For a production system replace with bcrypt, Argon2, or PBKDF2-SHA256.
+ * DEMONSTRATION-ONLY hash — NOT cryptographically secure.
+ * Replace with bcrypt, Argon2, or PBKDF2-SHA256 before any
+ * production deployment.
  */
 void utils_hash_password(const char *password,
                          char *out_hash, size_t out_size);

@@ -5,6 +5,11 @@
 #include <sys/stat.h>
 #include <sys/types.h>
 
+#ifndef _WIN32
+#include <termios.h>
+#include <unistd.h>
+#endif
+
 #include "utils.h"
 
 /* ------------------------------------------------------------------ */
@@ -147,22 +152,39 @@ int utils_get_double(const char *prompt, double *value,
 
 void utils_get_password(const char *prompt, char *buf, size_t size)
 {
-    /* NOTE: Password echo is visible here.
-     * For production, use platform-specific echo-off (termios on POSIX). */
     printf("%s", prompt);
     fflush(stdout);
 
+#ifndef _WIN32
+    /* Disable terminal echo while reading password */
+    struct termios old_attr, new_attr;
+    int echo_disabled = 0;
+
+    if (tcgetattr(STDIN_FILENO, &old_attr) == 0) {
+        new_attr = old_attr;
+        new_attr.c_lflag &= ~(tcflag_t)ECHO;
+        if (tcsetattr(STDIN_FILENO, TCSANOW, &new_attr) == 0)
+            echo_disabled = 1;
+    }
+#endif
+
     if (fgets(buf, (int)size, stdin) == NULL) {
         buf[0] = '\0';
-        return;
+    } else {
+        size_t len = strlen(buf);
+        if (len > 0 && buf[len - 1] == '\n') {
+            buf[len - 1] = '\0';
+        } else {
+            utils_flush_stdin();
+        }
     }
 
-    size_t len = strlen(buf);
-    if (len > 0 && buf[len - 1] == '\n') {
-        buf[len - 1] = '\0';
-    } else {
-        utils_flush_stdin();
+#ifndef _WIN32
+    if (echo_disabled) {
+        tcsetattr(STDIN_FILENO, TCSANOW, &old_attr);
+        putchar('\n');  /* newline since echo was off */
     }
+#endif
 }
 
 /* ------------------------------------------------------------------ */
@@ -170,9 +192,13 @@ void utils_get_password(const char *prompt, char *buf, size_t size)
 /* ------------------------------------------------------------------ */
 
 /*
- * Two-round hash for password storage.
- * IMPORTANT: NOT cryptographically secure — suitable for demonstration
- * only.  Replace with bcrypt/Argon2/PBKDF2 in production.
+ * utils_hash_password — demonstration-only password hashing.
+ *
+ * WARNING: This is NOT a cryptographically secure hash.  It must be
+ * replaced with a proper password hashing function (bcrypt, Argon2,
+ * or PBKDF2-SHA256 via libsodium or OpenSSL) before any production
+ * deployment.  Passwords stored with this function are vulnerable to
+ * offline brute-force and rainbow-table attacks.
  */
 void utils_hash_password(const char *password,
                          char *out_hash, size_t out_size)

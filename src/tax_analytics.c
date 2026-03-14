@@ -213,9 +213,18 @@ void analytics_year_comparison(void)
     printf("  %-20s  %12.2f  %12.2f\n","Outstanding", due1-paid1, due2-paid2);
 
     utils_print_divider();
-    if (cnt1 > 0 && cnt2 > 0) {
-        double change = ((paid2 - paid1) / (paid1 > 0.0 ? paid1 : 1.0)) * 100.0;
-        printf("  Revenue change from %d to %d: %+.1f%%\n",
-               year1, year2, change);
+    if (cnt1 > 0 || cnt2 > 0) {
+        if (paid1 <= 0.0) {
+            if (paid2 > 0.0)
+                printf("  Revenue change from %d to %d: N/A "
+                       "(no revenue in %d)\n", year1, year2, year1);
+            else
+                printf("  Revenue change from %d to %d: N/A "
+                       "(no revenue in either year)\n", year1, year2);
+        } else {
+            double change = ((paid2 - paid1) / paid1) * 100.0;
+            printf("  Revenue change from %d to %d: %+.1f%%\n",
+                   year1, year2, change);
+        }
     }
 }
